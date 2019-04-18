@@ -55,7 +55,11 @@ task automatic send;
         gen_clk;
       join_none
       for( int i = 0; i < DATA_LANES; i++ )
-        dphy_if_v.lp_data_p[i] <= 1'b0;
+        begin
+          dphy_if_v.lp_data_p[i] <= 1'b0;
+          dphy_if_v.hs_data_p[i] <= 1'b0;
+          dphy_if_v.hs_data_n[i] <= 1'b1;
+        end
       #50000;
       for( int i = 0; i < DATA_LANES; i++ )
         dphy_if_v.lp_data_n[i] <= 1'b0;
@@ -64,7 +68,7 @@ task automatic send;
       get_data_from_mbx;
       // Start clk for 300 ns before first valid byte
       start_clk;
-      #300000;
+      #500000;
       while( data_buffer.size() > 0 )
         begin
           // Get as much bytes as lanes from queue to lane buffer
@@ -92,12 +96,16 @@ task automatic send;
             end
         end
       for( int i = 0; i < DATA_LANES; i++ )
-        dphy_if_v.lp_data_n[i] <= 1'b1;
+        begin
+          dphy_if_v.lp_data_n[i] <= 1'b1;
+          dphy_if_v.hs_data_p[i] <= 1'b1;
+          dphy_if_v.hs_data_n[i] <= 1'b0;
+        end
       #50000;
       for( int i = 0; i < DATA_LANES; i++ )
         dphy_if_v.lp_data_p[i] <= 1'b1;
       // Run clk for 300 ns after last valid byte
-      #300000;
+      #500000;
       stop_clk;
     end
 endtask
