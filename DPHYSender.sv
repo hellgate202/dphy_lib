@@ -32,10 +32,14 @@ function new(
 endfunction
 
 function automatic void init_interface();
-  dphy_if_v.hs_data_p <= '0;
-  dphy_if_v.hs_data_n <= '1;
-  dphy_if_v.hs_clk_p  <= 1'b0;
-  dphy_if_v.hs_clk_n  <= 1'b1;
+  dphy_if_v.hs_data_p = '0;
+  dphy_if_v.hs_data_n = '1;
+  dphy_if_v.lp_data_p = '1;
+  dphy_if_v.lp_data_n = '1;
+  dphy_if_v.hs_clk_p  = 1'b0;
+  dphy_if_v.hs_clk_n  = 1'b1;
+  dphy_if_v.lp_clk_p  = 1'b1;
+  dphy_if_v.lp_clk_n  = 1'b1;
 endfunction
 
 task automatic send;
@@ -50,6 +54,11 @@ task automatic send;
       fork
         gen_clk;
       join_none
+      for( int i = 0; i < DATA_LANES; i++ )
+        dphy_if_v.lp_data_p[i] <= 1'b0;
+      #50000;
+      for( int i = 0; i < DATA_LANES; i++ )
+        dphy_if_v.lp_data_n[i] <= 1'b0;
       // Get all data from mailbox and put it to queue
       // After that add synchronizing sequence
       get_data_from_mbx;
@@ -82,6 +91,11 @@ task automatic send;
               @( posedge dphy_if_v.hs_clk_p );
             end
         end
+      for( int i = 0; i < DATA_LANES; i++ )
+        dphy_if_v.lp_data_n[i] <= 1'b1;
+      #50000;
+      for( int i = 0; i < DATA_LANES; i++ )
+        dphy_if_v.lp_data_p[i] <= 1'b1;
       // Run clk for 300 ns after last valid byte
       #300000;
       stop_clk;
@@ -106,10 +120,14 @@ endtask
 
 task automatic start_clk;
   clk_en = 1'b1;
+  dphy_if_v.lp_clk_p = 1'b1;
+  dphy_if_v.lp_clk_n = 1'b1;
 endtask
 
 task automatic stop_clk;
   clk_en = 1'b0;
+  dphy_if_v.lp_clk_p = 1'b0;
+  dphy_if_v.lp_clk_n = 1'b0;
 endtask
 
 task automatic get_data_from_mbx();
